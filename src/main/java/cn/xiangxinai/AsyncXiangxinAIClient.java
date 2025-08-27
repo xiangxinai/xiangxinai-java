@@ -333,8 +333,8 @@ public class AsyncXiangxinAIClient implements AutoCloseable {
                 
                 @Override
                 public void onResponse(Call call, Response response) throws IOException {
-                    try (response) {
-                        handleAsyncResponse(response, endpoint, future, method, requestBody, attempt);
+                    try (Response responseToClose = response) {
+                        handleAsyncResponse(responseToClose, endpoint, future, method, requestBody, attempt);
                     }
                 }
             });

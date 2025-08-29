@@ -32,7 +32,7 @@
 <dependency>
     <groupId>cn.xiangxinai</groupId>
     <artifactId>xiangxinai-java</artifactId>
-    <version>1.1.0</version>
+    <version>1.1.1</version>
 </dependency>
 ```
 
@@ -41,7 +41,7 @@
 在 `build.gradle` 中添加依赖：
 
 ```gradle
-implementation 'cn.xiangxinai:xiangxinai-java:1.1.0'
+implementation 'cn.xiangxinai:xiangxinai-java:1.1.1'
 ```
 
 ## 快速开始

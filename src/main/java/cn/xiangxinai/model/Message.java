@@ -20,8 +20,8 @@ public class Message {
         if (role == null || (!role.equals("user") && !role.equals("system") && !role.equals("assistant"))) {
             throw new IllegalArgumentException("role must be one of: user, system, assistant");
         }
-        if (content != null && content.length() > 10000) {
-            throw new IllegalArgumentException("content too long (max 10000 characters)");
+        if (content != null && content.length() > 1000000) {
+            throw new IllegalArgumentException("content too long (max 1000000 characters)");
         }
         
         this.role = role;
@@ -44,8 +44,8 @@ public class Message {
     }
     
     public void setContent(String content) {
-        if (content != null && content.length() > 10000) {
-            throw new IllegalArgumentException("content too long (max 10000 characters)");
+        if (content != null && content.length() > 1000000) {
+            throw new IllegalArgumentException("content too long (max 1000000 characters)");
         }
         this.content = content != null ? content.trim() : content;
     }

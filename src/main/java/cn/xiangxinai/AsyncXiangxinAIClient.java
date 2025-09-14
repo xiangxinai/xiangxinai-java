@@ -52,7 +52,7 @@ public class AsyncXiangxinAIClient implements AutoCloseable {
     private static final String DEFAULT_MODEL = "Xiangxin-Guardrails-Text";
     private static final int DEFAULT_TIMEOUT = 30;
     private static final int DEFAULT_MAX_RETRIES = 3;
-    private static final String USER_AGENT = "xiangxinai-java-async/1.1.0";
+    private static final String USER_AGENT = "xiangxinai-java-async/2.0.0";
     
     private final OkHttpClient httpClient;
     private final ObjectMapper objectMapper;

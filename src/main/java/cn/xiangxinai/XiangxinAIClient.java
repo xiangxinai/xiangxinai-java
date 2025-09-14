@@ -21,9 +21,12 @@ import java.util.concurrent.TimeUnit;
  * <pre>{@code
  * XiangxinAIClient client = new XiangxinAIClient("your-api-key");
  * 
- * // 检测提示词
+ * // 检测用户输入
  * GuardrailResponse result = client.checkPrompt("用户问题");
- * 
+ *
+ * // 检测输出内容（基于上下文）
+ * GuardrailResponse result = client.checkResponseCtx("用户问题", "助手回答");
+ *
  * // 检测对话上下文
  * List<Message> messages = Arrays.asList(
  *     new Message("user", "问题"),
@@ -40,7 +43,7 @@ public class XiangxinAIClient implements AutoCloseable {
     private static final String DEFAULT_MODEL = "Xiangxin-Guardrails-Text";
     private static final int DEFAULT_TIMEOUT = 30;
     private static final int DEFAULT_MAX_RETRIES = 3;
-    private static final String USER_AGENT = "xiangxinai-java/1.1.1";
+    private static final String USER_AGENT = "xiangxinai-java/2.0.0";
     
     private final OkHttpClient httpClient;
     private final ObjectMapper objectMapper;
@@ -106,15 +109,15 @@ public class XiangxinAIClient implements AutoCloseable {
     }
     
     /**
-     * 检测提示词的安全性
-     * 
-     * @param content 要检测的提示词内容
+     * 检测用户输入的安全性
+     *
+     * @param content 要检测的用户输入内容
      * @return 检测结果
      * @throws ValidationException 输入参数无效
      * @throws AuthenticationException 认证失败
      * @throws RateLimitException 超出速率限制
      * @throws XiangxinAIException 其他API错误
-     * 
+     *
      * <p>返回结果格式:
      * <pre>{@code
      * {
@@ -134,7 +137,7 @@ public class XiangxinAIClient implements AutoCloseable {
      *   "suggest_answer": "建议回答内容"
      * }
      * }</pre>
-     * 
+     *
      * <p>示例:
      * <pre>{@code
      * GuardrailResponse result = client.checkPrompt("我想学习编程");
@@ -144,27 +147,15 @@ public class XiangxinAIClient implements AutoCloseable {
      * }</pre>
      */
     public GuardrailResponse checkPrompt(String content) {
-        return checkPrompt(content, DEFAULT_MODEL);
-    }
-    
-    /**
-     * 检测提示词的安全性
-     * 
-     * @param content 要检测的提示词内容
-     * @param model 使用的模型名称
-     * @return 检测结果
-     */
-    public GuardrailResponse checkPrompt(String content, String model) {
         // 如果content是空字符串，直接返回无风险
         if (content == null || content.trim().isEmpty()) {
             return createSafeResponse();
         }
-        
-        List<Message> messages = new ArrayList<>();
-        messages.add(new Message("user", content.trim()));
-        
-        GuardrailRequest request = new GuardrailRequest(model, messages);
-        return makeRequest("POST", "/guardrails", request, GuardrailResponse.class);
+
+        Map<String, String> requestData = new java.util.HashMap<>();
+        requestData.put("input", content.trim());
+
+        return makeRequest("POST", "/guardrails/input", requestData, GuardrailResponse.class);
     }
     
     /**
@@ -235,7 +226,44 @@ public class XiangxinAIClient implements AutoCloseable {
         GuardrailRequest request = new GuardrailRequest(model, validatedMessages);
         return makeRequest("POST", "/guardrails", request, GuardrailResponse.class);
     }
-    
+
+    /**
+     * 检测用户输入和模型输出的安全性 - 上下文感知检测
+     *
+     * <p>这是护栏的核心功能，能够理解用户输入和模型输出的上下文进行安全检测。
+     * 护栏会基于用户问题的上下文来检测模型输出是否安全合规。
+     *
+     * @param prompt 用户输入的文本内容，用于让护栏理解上下文语意
+     * @param response 模型输出的文本内容，实际检测对象
+     * @return 基于上下文的检测结果，格式与checkPrompt相同
+     * @throws ValidationException 输入参数无效
+     * @throws AuthenticationException 认证失败
+     * @throws RateLimitException 超出速率限制
+     * @throws XiangxinAIException 其他API错误
+     *
+     * <p>示例:
+     * <pre>{@code
+     * GuardrailResponse result = client.checkResponseCtx(
+     *     "教我做饭",
+     *     "我可以教你做一些简单的家常菜"
+     * );
+     * System.out.println(result.getOverallRiskLevel()); // "无风险"
+     * System.out.println(result.getSuggestAction()); // "通过"
+     * }</pre>
+     */
+    public GuardrailResponse checkResponseCtx(String prompt, String response) {
+        // 如果prompt或response是空字符串，直接返回无风险
+        if ((prompt == null || prompt.trim().isEmpty()) && (response == null || response.trim().isEmpty())) {
+            return createSafeResponse();
+        }
+
+        Map<String, String> requestData = new java.util.HashMap<>();
+        requestData.put("input", prompt != null ? prompt.trim() : "");
+        requestData.put("output", response != null ? response.trim() : "");
+
+        return makeRequest("POST", "/guardrails/output", requestData, GuardrailResponse.class);
+    }
+
     /**
      * 检查API服务健康状态
      * 

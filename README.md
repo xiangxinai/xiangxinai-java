@@ -32,7 +32,7 @@
 <dependency>
     <groupId>cn.xiangxinai</groupId>
     <artifactId>xiangxinai-java</artifactId>
-    <version>1.1.1</version>
+    <version>2.0.0</version>
 </dependency>
 ```
 
@@ -41,7 +41,7 @@
 在 `build.gradle` 中添加依赖：
 
 ```gradle
-implementation 'cn.xiangxinai:xiangxinai-java:1.1.1'
+implementation 'cn.xiangxinai:xiangxinai-java:2.0.0'
 ```
 
 ## 快速开始
@@ -55,10 +55,18 @@ import cn.xiangxinai.model.*;
 // 初始化客户端
 XiangxinAIClient client = new XiangxinAIClient("your-api-key");
 
-// 检测单个提示词
+// 检测用户输入
 GuardrailResponse result = client.checkPrompt("用户输入的问题");
 System.out.println(result.getOverallRiskLevel()); // 无风险/低风险/中风险/高风险
 System.out.println(result.getSuggestAction());     // 通过/阻断/代答
+
+// 检测输出内容（基于上下文）
+GuardrailResponse ctxResult = client.checkResponseCtx(
+    "教我做饭",
+    "我可以教你做一些简单的家常菜"
+);
+System.out.println(ctxResult.getOverallRiskLevel()); // 无风险
+System.out.println(ctxResult.getSuggestAction());     // 通过
 ```
 
 ### 对话上下文检测（推荐）

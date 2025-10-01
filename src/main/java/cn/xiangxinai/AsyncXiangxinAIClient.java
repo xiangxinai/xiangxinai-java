@@ -52,7 +52,7 @@ public class AsyncXiangxinAIClient implements AutoCloseable {
     private static final String DEFAULT_MODEL = "Xiangxin-Guardrails-Text";
     private static final int DEFAULT_TIMEOUT = 30;
     private static final int DEFAULT_MAX_RETRIES = 3;
-    private static final String USER_AGENT = "xiangxinai-java-async/2.0.0";
+    private static final String USER_AGENT = "xiangxinai-java-async/2.3.0";
     
     private final OkHttpClient httpClient;
     private final ObjectMapper objectMapper;
@@ -216,9 +216,9 @@ public class AsyncXiangxinAIClient implements AutoCloseable {
                     return future;
                 }
                 
-                String content = msg.getContent();
+                Object content = msg.getContent();
                 // 检查是否有非空content
-                if (content != null && !content.trim().isEmpty()) {
+                if (content != null && (!(content instanceof String) || !((String) content).trim().isEmpty())) {
                     allEmpty = false;
                     // 只添加非空消息到validatedMessages
                     validatedMessages.add(msg);

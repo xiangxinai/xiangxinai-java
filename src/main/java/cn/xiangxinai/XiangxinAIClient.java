@@ -6,10 +6,17 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.JsonNode;
 import okhttp3.*;
 import java.io.IOException;
+import java.io.FileInputStream;
+import java.io.InputStream;
+import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Map;
+import java.util.HashMap;
 import java.util.concurrent.TimeUnit;
+import java.util.Base64;
 
 /**
  * 象信AI安全护栏客户端 - 基于LLM的上下文感知AI安全护栏
@@ -43,7 +50,7 @@ public class XiangxinAIClient implements AutoCloseable {
     private static final String DEFAULT_MODEL = "Xiangxin-Guardrails-Text";
     private static final int DEFAULT_TIMEOUT = 30;
     private static final int DEFAULT_MAX_RETRIES = 3;
-    private static final String USER_AGENT = "xiangxinai-java/2.0.0";
+    private static final String USER_AGENT = "xiangxinai-java/2.3.0";
     
     private final OkHttpClient httpClient;
     private final ObjectMapper objectMapper;
@@ -204,9 +211,9 @@ public class XiangxinAIClient implements AutoCloseable {
                 throw new ValidationException("Message cannot be null");
             }
             
-            String content = msg.getContent();
+            Object content = msg.getContent();
             // 检查是否有非空content
-            if (content != null && !content.trim().isEmpty()) {
+            if (content != null && (!(content instanceof String) || !((String) content).trim().isEmpty())) {
                 allEmpty = false;
                 // 只添加非空消息到validatedMessages
                 validatedMessages.add(msg);
@@ -262,6 +269,173 @@ public class XiangxinAIClient implements AutoCloseable {
         requestData.put("output", response != null ? response.trim() : "");
 
         return makeRequest("POST", "/guardrails/output", requestData, GuardrailResponse.class);
+    }
+
+    /**
+     * 将图片编码为base64格式
+     *
+     * @param imagePath 图片的本地路径或HTTP(S)链接
+     * @return base64编码的图片内容
+     * @throws IOException 读取图片失败
+     */
+    private String encodeBase64FromPath(String imagePath) throws IOException {
+        byte[] imageData;
+
+        if (imagePath.startsWith("http://") || imagePath.startsWith("https://")) {
+            // 从URL获取图片
+            try (InputStream is = new URL(imagePath).openStream()) {
+                imageData = is.readAllBytes();
+            }
+        } else {
+            // 从本地文件读取
+            imageData = Files.readAllBytes(Paths.get(imagePath));
+        }
+
+        return Base64.getEncoder().encodeToString(imageData);
+    }
+
+    /**
+     * 检测文本提示词和图片的安全性 - 多模态检测
+     *
+     * <p>结合文本语义和图片内容进行安全检测。
+     *
+     * @param prompt 文本提示词（可以为空）
+     * @param image 图片文件的本地路径或HTTP(S)链接（不能为空）
+     * @return 检测结果
+     * @throws ValidationException 输入参数无效
+     * @throws XiangxinAIException 其他API错误
+     *
+     * <p>示例:
+     * <pre>{@code
+     * // 检测本地图片
+     * GuardrailResponse result = client.checkPromptImage("这个图片安全吗？", "/path/to/image.jpg");
+     * // 检测网络图片
+     * GuardrailResponse result = client.checkPromptImage("", "https://example.com/image.jpg");
+     * System.out.println(result.getOverallRiskLevel());
+     * }</pre>
+     */
+    public GuardrailResponse checkPromptImage(String prompt, String image) {
+        return checkPromptImage(prompt, image, "Xiangxin-Guardrails-VL");
+    }
+
+    /**
+     * 检测文本提示词和图片的安全性，指定模型
+     *
+     * @param prompt 文本提示词（可以为空）
+     * @param image 图片文件的本地路径或HTTP(S)链接（不能为空）
+     * @param model 使用的模型名称
+     * @return 检测结果
+     */
+    public GuardrailResponse checkPromptImage(String prompt, String image, String model) {
+        if (image == null || image.trim().isEmpty()) {
+            throw new ValidationException("Image path cannot be empty");
+        }
+
+        // 编码图片
+        String imageBase64;
+        try {
+            imageBase64 = encodeBase64FromPath(image);
+        } catch (java.nio.file.NoSuchFileException e) {
+            throw new ValidationException("Image file not found: " + image);
+        } catch (IOException e) {
+            throw new XiangxinAIException("Failed to encode image: " + e.getMessage(), e);
+        }
+
+        // 构建消息内容
+        List<Object> content = new ArrayList<>();
+        if (prompt != null && !prompt.trim().isEmpty()) {
+            Map<String, String> textContent = new HashMap<>();
+            textContent.put("type", "text");
+            textContent.put("text", prompt.trim());
+            content.add(textContent);
+        }
+
+        Map<String, Object> imageContent = new HashMap<>();
+        imageContent.put("type", "image_url");
+        Map<String, String> imageUrl = new HashMap<>();
+        imageUrl.put("url", "data:image/jpeg;base64," + imageBase64);
+        imageContent.put("image_url", imageUrl);
+        content.add(imageContent);
+
+        // 创建消息
+        Message message = new Message("user", content);
+        List<Message> messages = new ArrayList<>();
+        messages.add(message);
+
+        GuardrailRequest request = new GuardrailRequest(model, messages);
+        return makeRequest("POST", "/guardrails", request, GuardrailResponse.class);
+    }
+
+    /**
+     * 检测文本提示词和多张图片的安全性 - 多模态检测
+     *
+     * <p>结合文本语义和多张图片内容进行安全检测。
+     *
+     * @param prompt 文本提示词（可以为空）
+     * @param images 图片文件的本地路径或HTTP(S)链接列表（不能为空）
+     * @return 检测结果
+     * @throws ValidationException 输入参数无效
+     * @throws XiangxinAIException 其他API错误
+     *
+     * <p>示例:
+     * <pre>{@code
+     * List<String> images = Arrays.asList("/path/to/image1.jpg", "https://example.com/image2.jpg");
+     * GuardrailResponse result = client.checkPromptImages("这些图片安全吗？", images);
+     * System.out.println(result.getOverallRiskLevel());
+     * }</pre>
+     */
+    public GuardrailResponse checkPromptImages(String prompt, List<String> images) {
+        return checkPromptImages(prompt, images, "Xiangxin-Guardrails-VL");
+    }
+
+    /**
+     * 检测文本提示词和多张图片的安全性，指定模型
+     *
+     * @param prompt 文本提示词（可以为空）
+     * @param images 图片文件的本地路径或HTTP(S)链接列表（不能为空）
+     * @param model 使用的模型名称
+     * @return 检测结果
+     */
+    public GuardrailResponse checkPromptImages(String prompt, List<String> images, String model) {
+        if (images == null || images.isEmpty()) {
+            throw new ValidationException("Images list cannot be empty");
+        }
+
+        // 构建消息内容
+        List<Object> content = new ArrayList<>();
+        if (prompt != null && !prompt.trim().isEmpty()) {
+            Map<String, String> textContent = new HashMap<>();
+            textContent.put("type", "text");
+            textContent.put("text", prompt.trim());
+            content.add(textContent);
+        }
+
+        // 编码所有图片
+        for (String imagePath : images) {
+            String imageBase64;
+            try {
+                imageBase64 = encodeBase64FromPath(imagePath);
+            } catch (java.nio.file.NoSuchFileException e) {
+                throw new ValidationException("Image file not found: " + imagePath);
+            } catch (IOException e) {
+                throw new XiangxinAIException("Failed to encode image " + imagePath + ": " + e.getMessage(), e);
+            }
+
+            Map<String, Object> imageContent = new HashMap<>();
+            imageContent.put("type", "image_url");
+            Map<String, String> imageUrl = new HashMap<>();
+            imageUrl.put("url", "data:image/jpeg;base64," + imageBase64);
+            imageContent.put("image_url", imageUrl);
+            content.add(imageContent);
+        }
+
+        // 创建消息
+        Message message = new Message("user", content);
+        List<Message> messages = new ArrayList<>();
+        messages.add(message);
+
+        GuardrailRequest request = new GuardrailRequest(model, messages);
+        return makeRequest("POST", "/guardrails", request, GuardrailResponse.class);
     }
 
     /**

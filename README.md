@@ -14,6 +14,7 @@
 - **上下文感知**: 理解完整对话上下文，而非简单的单句检测
 - **智能检测**: 基于LLM的深度语义理解
 - **双重防护**: 合规性检测 + 安全性检测
+- **多模态检测**: 支持图片内容安全检测（2.3.0新增）
 - **实时响应**: 毫秒级检测响应
 - **简单集成**: 易于集成的SDK接口
 
@@ -32,7 +33,7 @@
 <dependency>
     <groupId>cn.xiangxinai</groupId>
     <artifactId>xiangxinai-java</artifactId>
-    <version>2.0.0</version>
+    <version>2.3.0</version>
 </dependency>
 ```
 
@@ -41,7 +42,7 @@
 在 `build.gradle` 中添加依赖：
 
 ```gradle
-implementation 'cn.xiangxinai:xiangxinai-java:2.0.0'
+implementation 'cn.xiangxinai:xiangxinai-java:2.3.0'
 ```
 
 ## 快速开始
@@ -137,6 +138,42 @@ asyncClient.checkConversationAsync(messages)
     });
 
 asyncClient.close(); // 记住关闭资源
+```
+
+### 多模态图片检测（2.3.0新增）
+
+象信AI安全护栏2.3.0版本新增了多模态检测功能，支持图片内容安全检测，可以结合提示词文本的语义和图片内容语义分析得出是否安全。
+
+```java
+import cn.xiangxinai.XiangxinAIClient;
+import cn.xiangxinai.model.GuardrailResponse;
+import java.util.Arrays;
+import java.util.List;
+
+XiangxinAIClient client = new XiangxinAIClient("your-api-key");
+
+// 检测单张图片（本地文件）
+GuardrailResponse result = client.checkPromptImage(
+    "这个图片安全吗？",
+    "/path/to/image.jpg"
+);
+System.out.println(result.getOverallRiskLevel());
+System.out.println(result.getSuggestAction());
+
+// 检测单张图片（网络URL）
+result = client.checkPromptImage(
+    "",  // prompt可以为空
+    "https://example.com/image.jpg"
+);
+
+// 检测多张图片
+List<String> images = Arrays.asList(
+    "/path/to/image1.jpg",
+    "https://example.com/image2.jpg",
+    "/path/to/image3.png"
+);
+result = client.checkPromptImages("这些图片都安全吗？", images);
+System.out.println(result.getOverallRiskLevel());
 ```
 
 ### 使用 try-with-resources

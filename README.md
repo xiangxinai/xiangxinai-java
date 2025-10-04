@@ -13,7 +13,7 @@
 
 - **上下文感知**: 理解完整对话上下文，而非简单的单句检测
 - **智能检测**: 基于LLM的深度语义理解
-- **双重防护**: 合规性检测 + 安全性检测
+- **三重防护**: 合规性检测 + 安全性检测 + 敏感数据防泄漏（2.4.0新增）
 - **多模态检测**: 支持图片内容安全检测（2.3.0新增）
 - **实时响应**: 毫秒级检测响应
 - **简单集成**: 易于集成的SDK接口
@@ -33,7 +33,7 @@
 <dependency>
     <groupId>cn.xiangxinai</groupId>
     <artifactId>xiangxinai-java</artifactId>
-    <version>2.3.0</version>
+    <version>2.4.0</version>
 </dependency>
 ```
 
@@ -42,7 +42,7 @@
 在 `build.gradle` 中添加依赖：
 
 ```gradle
-implementation 'cn.xiangxinai:xiangxinai-java:2.3.0'
+implementation 'cn.xiangxinai:xiangxinai-java:2.4.0'
 ```
 
 ## 快速开始
@@ -367,15 +367,21 @@ public class GuardrailResponse {
 public class GuardrailResult {
     private ComplianceResult compliance;  // 合规检测结果
     private SecurityResult security;      // 安全检测结果
+    private DataResult data;              // 数据防泄漏检测结果（v2.4.0新增）
 }
 ```
 
-#### ComplianceResult / SecurityResult
+#### ComplianceResult / SecurityResult / DataResult
 
 ```java
 public class ComplianceResult {
     private String riskLevel;             // 风险等级
     private List<String> categories;      // 风险类别列表
+}
+
+public class DataResult {
+    private String riskLevel;             // 风险等级
+    private List<String> categories;      // 检测到的敏感数据类型（v2.4.0新增）
 }
 ```
 
@@ -392,11 +398,15 @@ public class ComplianceResult {
     "security": {
       "risk_level": "无风险",           // 无风险/低风险/中风险/高风险
       "categories": []                  // 安全风险类别
+    },
+    "data": {
+      "risk_level": "无风险",           // 无风险/低风险/中风险/高风险（v2.4.0新增）
+      "categories": []                  // 检测到的敏感数据类型（v2.4.0新增）
     }
   },
   "overall_risk_level": "无风险",       // 综合风险等级
   "suggest_action": "通过",             // 通过/阻断/代答
-  "suggest_answer": null                // 建议回答（如果有）
+  "suggest_answer": null                // 建议回答（数据防泄漏时包含脱敏后内容）
 }
 ```
 

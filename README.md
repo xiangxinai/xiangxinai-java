@@ -11,12 +11,15 @@ Xiangxin AI Guardrails is a context-aware AI safety guardrail system based on la
 
 ## Key Features
 
-- **Context Awareness**: Understands the entire conversation rather than isolated sentences  
-- **Intelligent Detection**: Deep semantic understanding powered by LLMs  
-- **Triple Protection**: Compliance detection + Security detection + Sensitive data leak prevention (added in v2.4.0)  
-- **Multimodal Detection**: Supports image content safety detection (added in v2.3.0)  
-- **Real-Time Response**: Millisecond-level detection latency  
-- **Simple Integration**: Easy-to-use SDK interfaces  
+- 🧠 **Context Awareness** – Based on LLM-powered conversational understanding, not simple batch detection
+- 🔍 **Prompt Injection Detection** – Identifies malicious prompt injections and jailbreak attacks
+- 📋 **Content Compliance Detection** – Ensures compliance with fundamental security requirements for generative AI services
+- 🔐 **Sensitive Data Leakage Prevention** – Detects and prevents the leakage of personal or enterprise-sensitive information
+- 🧩 **User-Level Blocking Policy** – Supports risk identification and blocking strategies at the user level
+- 🖼️ **Multimodal Detection** – Supports image content safety detection
+- 🛠️ **Easy Integration** – Compatible with the OpenAI API format; integrate with just one line of code
+- ⚡ **OpenAI-Style API** – Familiar interface design for quick adoption
+- 🚀 **Sync/Async Support** – Supports both synchronous and asynchronous modes to meet diverse application needs
 
 ## Requirements
 
@@ -33,7 +36,7 @@ Add the dependency to your `pom.xml`:
 <dependency>
     <groupId>cn.xiangxinai</groupId>
     <artifactId>xiangxinai-java</artifactId>
-    <version>2.6.0</version>
+    <version>2.6.1</version>
 </dependency>
 ````
 
@@ -42,7 +45,7 @@ Add the dependency to your `pom.xml`:
 Add the dependency to your `build.gradle`:
 
 ```gradle
-implementation 'cn.xiangxinai:xiangxinai-java:2.6.0'
+implementation 'cn.xiangxinai:xiangxinai-java:2.6.1'
 ```
 
 ## Quick Start
@@ -355,11 +358,13 @@ public class GuardrailResponse {
     private String overallRiskLevel;
     private String suggestAction;
     private String suggestAnswer;
+    private Double score;  // 检测置信度分数 (v2.4.1新增)
     
     public boolean isSafe()
     public boolean isBlocked()
     public boolean hasSubstitute()
     public List<String> getAllCategories()
+    public Double getScore()
 }
 ```
 

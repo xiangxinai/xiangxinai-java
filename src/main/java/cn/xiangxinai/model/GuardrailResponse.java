@@ -26,6 +26,9 @@ public class GuardrailResponse {
     @JsonProperty("suggest_answer")
     private String suggestAnswer;
     
+    @JsonProperty("score")
+    private Double score;
+    
     public GuardrailResponse() {
     }
     
@@ -36,6 +39,16 @@ public class GuardrailResponse {
         this.overallRiskLevel = overallRiskLevel;
         this.suggestAction = suggestAction;
         this.suggestAnswer = suggestAnswer;
+    }
+    
+    public GuardrailResponse(String id, GuardrailResult result, String overallRiskLevel, 
+                            String suggestAction, String suggestAnswer, Double score) {
+        this.id = id;
+        this.result = result;
+        this.overallRiskLevel = overallRiskLevel;
+        this.suggestAction = suggestAction;
+        this.suggestAnswer = suggestAnswer;
+        this.score = score;
     }
     
     public String getId() {
@@ -76,6 +89,14 @@ public class GuardrailResponse {
     
     public void setSuggestAnswer(String suggestAnswer) {
         this.suggestAnswer = suggestAnswer;
+    }
+    
+    public Double getScore() {
+        return score;
+    }
+    
+    public void setScore(Double score) {
+        this.score = score;
     }
     
     /**
@@ -128,6 +149,7 @@ public class GuardrailResponse {
                 ", overallRiskLevel='" + overallRiskLevel + '\'' +
                 ", suggestAction='" + suggestAction + '\'' +
                 ", suggestAnswer='" + suggestAnswer + '\'' +
+                ", score=" + score +
                 '}';
     }
 }

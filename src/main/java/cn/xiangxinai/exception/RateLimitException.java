@@ -1,7 +1,7 @@
 package cn.xiangxinai.exception;
 
 /**
- * 速率限制错误
+ * Rate limit exception
  */
 public class RateLimitException extends XiangxinAIException {
     

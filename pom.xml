@@ -6,11 +6,11 @@
 
     <groupId>cn.xiangxinai</groupId>
     <artifactId>xiangxinai-java</artifactId>
-    <version>2.4.0</version>
+    <version>2.6.0</version>
     <packaging>jar</packaging>
 
     <name>xiangxinai-java</name>
-    <description>象信AI安全护栏 Java 客户端 - 基于LLM的上下文感知AI安全护栏</description>
+    <description>Xiangxin Guardrails Java Client - Open-source context-aware AI guardrails based on LLM</description>
     <url>https://xiangxinai.cn</url>
 
     <licenses>

@@ -1,148 +1,161 @@
-# 象信AI安全护栏 Java SDK
+# Xiangxin AI Guardrails Java SDK
 
 [![Maven Central](https://img.shields.io/maven-central/v/cn.xiangxinai/xiangxinai-java.svg)](https://search.maven.org/artifact/cn.xiangxinai/xiangxinai-java)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
-象信AI安全护栏 Java 客户端 - 基于LLM的上下文感知AI安全护栏。
+Xiangxin AI Guardrails Java Client — A Context-Aware AI Safety Guardrails System Powered by LLMs.
 
-## 概述
+## Overview
 
-象信AI安全护栏是一个基于大语言模型的上下文感知AI安全护栏系统，能够理解对话上下文进行智能安全检测。不同于传统的关键词匹配，我们的护栏能够理解语言的深层含义和对话的上下文关系。
+Xiangxin AI Guardrails is a context-aware AI safety guardrail system based on large language models (LLMs). It understands conversational context to perform intelligent safety detection. Unlike traditional keyword-based methods, our guardrail interprets deep semantic meaning and contextual relationships within conversations.
 
-## 核心特性
+## Key Features
 
-- **上下文感知**: 理解完整对话上下文，而非简单的单句检测
-- **智能检测**: 基于LLM的深度语义理解
-- **三重防护**: 合规性检测 + 安全性检测 + 敏感数据防泄漏（2.4.0新增）
-- **多模态检测**: 支持图片内容安全检测（2.3.0新增）
-- **实时响应**: 毫秒级检测响应
-- **简单集成**: 易于集成的SDK接口
+- **Context Awareness**: Understands the entire conversation rather than isolated sentences  
+- **Intelligent Detection**: Deep semantic understanding powered by LLMs  
+- **Triple Protection**: Compliance detection + Security detection + Sensitive data leak prevention (added in v2.4.0)  
+- **Multimodal Detection**: Supports image content safety detection (added in v2.3.0)  
+- **Real-Time Response**: Millisecond-level detection latency  
+- **Simple Integration**: Easy-to-use SDK interfaces  
 
-## 环境要求
+## Requirements
 
-- Java 8 或更高版本
-- Maven 3.6+ 或 Gradle 6.0+
+- Java 8 or later  
+- Maven 3.6+ or Gradle 6.0+
 
-## 安装
+## Installation
 
 ### Maven
 
-在 `pom.xml` 中添加依赖：
+Add the dependency to your `pom.xml`:
 
 ```xml
 <dependency>
     <groupId>cn.xiangxinai</groupId>
     <artifactId>xiangxinai-java</artifactId>
-    <version>2.4.0</version>
+    <version>2.6.0</version>
 </dependency>
-```
+````
 
 ### Gradle
 
-在 `build.gradle` 中添加依赖：
+Add the dependency to your `build.gradle`:
 
 ```gradle
-implementation 'cn.xiangxinai:xiangxinai-java:2.4.0'
+implementation 'cn.xiangxinai:xiangxinai-java:2.6.0'
 ```
 
-## 快速开始
+## Quick Start
 
-### 基本用法
+### Basic Usage
 
 ```java
 import cn.xiangxinai.XiangxinAIClient;
 import cn.xiangxinai.model.*;
 
-// 初始化客户端
+// Initialize client
 XiangxinAIClient client = new XiangxinAIClient("your-api-key");
 
-// 检测用户输入
-GuardrailResponse result = client.checkPrompt("用户输入的问题");
-System.out.println(result.getOverallRiskLevel()); // 无风险/低风险/中风险/高风险
-System.out.println(result.getSuggestAction());     // 通过/阻断/代答
+// Check user input
+GuardrailResponse result = client.checkPrompt("User input text");
+System.out.println(result.getOverallRiskLevel()); // Safe / Low / Medium / High
+System.out.println(result.getSuggestAction());     // Allow / Block / Substitute
 
-// 检测输出内容（基于上下文）
+// Check input with user ID (optional)
+GuardrailResponse result2 = client.checkPrompt("User input text", "user-123");
+
+// Context-based response checking
 GuardrailResponse ctxResult = client.checkResponseCtx(
-    "教我做饭",
-    "我可以教你做一些简单的家常菜"
+    "Teach me to cook",
+    "I can teach you how to make simple home dishes"
 );
-System.out.println(ctxResult.getOverallRiskLevel()); // 无风险
-System.out.println(ctxResult.getSuggestAction());     // 通过
+System.out.println(ctxResult.getOverallRiskLevel());
+System.out.println(ctxResult.getSuggestAction());
+
+// With user ID (optional)
+GuardrailResponse ctxResult2 = client.checkResponseCtx(
+    "Teach me to cook",
+    "I can teach you how to make simple home dishes",
+    "user-123"
+);
 ```
 
-### 对话上下文检测（推荐）
+### Conversation Context Detection (Recommended)
 
 ```java
 import java.util.Arrays;
 import java.util.List;
 
-// 检测完整对话上下文 - 核心功能
+// Detect full conversation context — core feature
 List<Message> messages = Arrays.asList(
-    new Message("user", "用户的问题"),
-    new Message("assistant", "AI助手的回答"),
-    new Message("user", "用户的后续问题")
+    new Message("user", "User’s question"),
+    new Message("assistant", "Assistant’s response"),
+    new Message("user", "Follow-up question")
 );
 
 GuardrailResponse result = client.checkConversation(messages);
 
-// 检查检测结果
+// Check detection result
 if (result.isSafe()) {
-    System.out.println("对话安全，可以继续");
+    System.out.println("Conversation is safe");
 } else if (result.isBlocked()) {
-    System.out.println("对话存在风险，建议阻断");
+    System.out.println("Conversation has risks — block it");
 } else if (result.hasSubstitute()) {
-    System.out.println("建议使用安全回答: " + result.getSuggestAnswer());
+    System.out.println("Suggested safe answer: " + result.getSuggestAnswer());
 }
+
+// With user ID (optional)
+GuardrailResponse result2 = client.checkConversation(messages, "Xiangxin-Guardrails-Text", "user-123");
 ```
 
-### 异步接口（推荐，性能更好）
+### Asynchronous API (Recommended for Better Performance)
 
 ```java
 import cn.xiangxinai.AsyncXiangxinAIClient;
 import java.util.concurrent.CompletableFuture;
 
-// 使用异步客户端
+// Async client
 AsyncXiangxinAIClient asyncClient = new AsyncXiangxinAIClient("your-api-key");
 
-// 异步检测提示词
-CompletableFuture<GuardrailResponse> future = asyncClient.checkPromptAsync("用户问题");
+// Async prompt check
+CompletableFuture<GuardrailResponse> future = asyncClient.checkPromptAsync("User question");
 
-// 方式1: 阻塞等待结果
+// Option 1: Block until complete
 GuardrailResponse result = future.get();
 System.out.println(result.getOverallRiskLevel());
 
-// 方式2: 使用回调（推荐）
-asyncClient.checkPromptAsync("用户问题")
+// Option 2: Use callback (recommended)
+asyncClient.checkPromptAsync("User question")
     .thenAccept(result -> {
-        System.out.println("异步检测完成:");
-        System.out.println("风险等级: " + result.getOverallRiskLevel());
-        System.out.println("建议动作: " + result.getSuggestAction());
+        System.out.println("Async check completed:");
+        System.out.println("Risk Level: " + result.getOverallRiskLevel());
+        System.out.println("Suggested Action: " + result.getSuggestAction());
     })
     .exceptionally(throwable -> {
-        System.err.println("检测失败: " + throwable.getMessage());
+        System.err.println("Check failed: " + throwable.getMessage());
         return null;
     });
 
-// 异步对话检测
+// Async conversation detection
 List<Message> messages = Arrays.asList(
-    new Message("user", "用户问题"),
-    new Message("assistant", "助手回答")
+    new Message("user", "User question"),
+    new Message("assistant", "Assistant answer")
 );
 asyncClient.checkConversationAsync(messages)
     .thenAccept(result -> {
         if (result.isSafe()) {
-            System.out.println("对话安全");
+            System.out.println("Conversation is safe");
         } else {
-            System.out.println("对话存在风险: " + result.getAllCategories());
+            System.out.println("Conversation risks: " + result.getAllCategories());
         }
     });
 
-asyncClient.close(); // 记住关闭资源
+asyncClient.close(); // Remember to close resources
 ```
 
-### 多模态图片检测（2.3.0新增）
+### Multimodal Image Detection (Added in v2.3.0)
 
-象信AI安全护栏2.3.0版本新增了多模态检测功能，支持图片内容安全检测，可以结合提示词文本的语义和图片内容语义分析得出是否安全。
+Version 2.3.0 introduces multimodal detection — analyzing both text and image semantics for safety assessment.
 
 ```java
 import cn.xiangxinai.XiangxinAIClient;
@@ -152,97 +165,109 @@ import java.util.List;
 
 XiangxinAIClient client = new XiangxinAIClient("your-api-key");
 
-// 检测单张图片（本地文件）
+// Local image
 GuardrailResponse result = client.checkPromptImage(
-    "这个图片安全吗？",
+    "Is this image safe?",
     "/path/to/image.jpg"
 );
 System.out.println(result.getOverallRiskLevel());
 System.out.println(result.getSuggestAction());
 
-// 检测单张图片（网络URL）
+// Image URL
 result = client.checkPromptImage(
-    "",  // prompt可以为空
+    "",  // prompt optional
     "https://example.com/image.jpg"
 );
 
-// 检测多张图片
+// Multiple images
 List<String> images = Arrays.asList(
     "/path/to/image1.jpg",
     "https://example.com/image2.jpg",
     "/path/to/image3.png"
 );
-result = client.checkPromptImages("这些图片都安全吗？", images);
+result = client.checkPromptImages("Are these images safe?", images);
 System.out.println(result.getOverallRiskLevel());
+
+// With user ID (optional)
+result = client.checkPromptImage(
+    "Is this image safe?",
+    "/path/to/image.jpg",
+    "Xiangxin-Guardrails-VL",
+    "user-123"
+);
+
+result = client.checkPromptImages(
+    "Are these images safe?",
+    images,
+    "Xiangxin-Guardrails-VL",
+    "user-123"
+);
 ```
 
-### 使用 try-with-resources
+### Using try-with-resources
 
 ```java
-// 同步客户端
+// Sync client
 try (XiangxinAIClient client = new XiangxinAIClient("your-api-key")) {
-    GuardrailResponse result = client.checkPrompt("用户问题");
+    GuardrailResponse result = client.checkPrompt("User question");
     System.out.println(result.getOverallRiskLevel());
 }
 
-// 异步客户端
+// Async client
 try (AsyncXiangxinAIClient asyncClient = new AsyncXiangxinAIClient("your-api-key")) {
-    CompletableFuture<GuardrailResponse> future = asyncClient.checkPromptAsync("用户问题");
+    CompletableFuture<GuardrailResponse> future = asyncClient.checkPromptAsync("User question");
     GuardrailResponse result = future.get();
     System.out.println(result.getOverallRiskLevel());
 }
 ```
 
-## API 参考
+## API Reference
 
-### XiangxinAIClient（同步客户端）
+### XiangxinAIClient (Synchronous Client)
 
-#### 构造函数
+#### Constructor
 
 ```java
-// 使用默认配置
+// Default config
 XiangxinAIClient client = new XiangxinAIClient("your-api-key");
 
-// 自定义配置
+// Custom config
 XiangxinAIClient client = new XiangxinAIClient(
-    "your-api-key",     // API密钥
-    "https://api.xiangxinai.cn/v1", // API基础URL
-    30,                 // 请求超时时间（秒）
-    3                   // 最大重试次数
+    "your-api-key",
+    "https://api.xiangxinai.cn/v1",
+    30, // timeout in seconds
+    3   // max retries
 );
 ```
 
-#### 方法
+#### Methods
 
 ##### checkPrompt(content)
 
-检测单个提示词的安全性。
+Checks the safety of a single prompt.
 
 ```java
 GuardrailResponse checkPrompt(String content)
 GuardrailResponse checkPrompt(String content, String model)
 ```
 
-**参数:**
-- `content` (String): 要检测的内容
-- `model` (String, 可选): 模型名称，默认 "Xiangxin-Guardrails-Text"
+**Parameters:**
+
+* `content` (String): Content to check
+* `model` (String, optional): Model name (default: `"Xiangxin-Guardrails-Text"`)
 
 ##### checkConversation(messages)
 
-检测对话上下文的安全性（推荐使用）。
+Checks the safety of a conversation (recommended).
 
 ```java
 GuardrailResponse checkConversation(List<Message> messages)
 GuardrailResponse checkConversation(List<Message> messages, String model)
 ```
 
-**参数:**
-- `messages` (List<Message>): 对话消息列表
-- `model` (String, 可选): 模型名称
-
 ##### healthCheck()
 
-检查API服务健康状态。
+Checks the API service health.
 
 ```java
 Map<String, Object> healthCheck()
@@ -250,63 +275,41 @@ Map<String, Object> healthCheck()
 
 ##### getModels()
 
-获取可用模型列表。
+Retrieves available models.
 
 ```java
 Map<String, Object> getModels()
 ```
 
-### AsyncXiangxinAIClient（异步客户端，推荐）
+### AsyncXiangxinAIClient (Asynchronous Client — Recommended)
 
-#### 构造函数
+#### Constructor
 
 ```java
-// 使用默认配置
 AsyncXiangxinAIClient asyncClient = new AsyncXiangxinAIClient("your-api-key");
 
-// 自定义配置
 AsyncXiangxinAIClient asyncClient = new AsyncXiangxinAIClient(
-    "your-api-key",     // API密钥
-    "https://api.xiangxinai.cn/v1", // API基础URL
-    30,                 // 请求超时时间（秒）
-    3                   // 最大重试次数
+    "your-api-key",
+    "https://api.xiangxinai.cn/v1",
+    30,
+    3
 );
 ```
 
-#### 异步方法
+#### Async Methods
 
 ##### checkPromptAsync(content)
 
-异步检测单个提示词的安全性。
+Asynchronously checks a single prompt.
 
 ```java
 CompletableFuture<GuardrailResponse> checkPromptAsync(String content)
 CompletableFuture<GuardrailResponse> checkPromptAsync(String content, String model)
 ```
 
-**返回值:**
-- `CompletableFuture<GuardrailResponse>`: 异步检测结果
-
-**示例:**
-```java
-// 方式1: 阻塞等待
-CompletableFuture<GuardrailResponse> future = asyncClient.checkPromptAsync("用户问题");
-GuardrailResponse result = future.get();
-
-// 方式2: 回调处理（推荐）
-asyncClient.checkPromptAsync("用户问题")
-    .thenAccept(result -> {
-        System.out.println("检测完成: " + result.getOverallRiskLevel());
-    })
-    .exceptionally(throwable -> {
-        System.err.println("检测失败: " + throwable.getMessage());
-        return null;
-    });
-```
-
 ##### checkConversationAsync(messages)
 
-异步检测对话上下文的安全性。
+Asynchronously checks conversation safety.
 
 ```java
 CompletableFuture<GuardrailResponse> checkConversationAsync(List<Message> messages)
@@ -315,7 +318,7 @@ CompletableFuture<GuardrailResponse> checkConversationAsync(List<Message> messag
 
 ##### healthCheckAsync()
 
-异步检查API服务健康状态。
+Asynchronously checks API health.
 
 ```java
 CompletableFuture<Map<String, Object>> healthCheckAsync()
@@ -323,23 +326,23 @@ CompletableFuture<Map<String, Object>> healthCheckAsync()
 
 ##### getModelsAsync()
 
-异步获取可用模型列表。
+Asynchronously retrieves model list.
 
 ```java
 CompletableFuture<Map<String, Object>> getModelsAsync()
 ```
 
-### 数据模型
+### Data Models
 
 #### Message
 
 ```java
 public class Message {
     private String role;    // "user", "system", "assistant"
-    private String content; // 消息内容
+    private String content; // message content
     
     public Message(String role, String content)
-    // getter/setter方法...
+    // getters/setters...
 }
 ```
 
@@ -347,17 +350,16 @@ public class Message {
 
 ```java
 public class GuardrailResponse {
-    private String id;                    // 请求唯一标识
-    private GuardrailResult result;       // 检测结果详情
-    private String overallRiskLevel;      // 综合风险等级
-    private String suggestAction;         // 建议动作
-    private String suggestAnswer;         // 建议回答（可能为null）
+    private String id;
+    private GuardrailResult result;
+    private String overallRiskLevel;
+    private String suggestAction;
+    private String suggestAnswer;
     
-    // 便捷方法
-    public boolean isSafe()              // 判断是否安全
-    public boolean isBlocked()           // 判断是否被阻断
-    public boolean hasSubstitute()       // 判断是否有代答
-    public List<String> getAllCategories() // 获取所有风险类别
+    public boolean isSafe()
+    public boolean isBlocked()
+    public boolean hasSubstitute()
+    public List<String> getAllCategories()
 }
 ```
 
@@ -365,9 +367,9 @@ public class GuardrailResponse {
 
 ```java
 public class GuardrailResult {
-    private ComplianceResult compliance;  // 合规检测结果
-    private SecurityResult security;      // 安全检测结果
-    private DataResult data;              // 数据防泄漏检测结果（v2.4.0新增）
+    private ComplianceResult compliance;
+    private SecurityResult security;
+    private DataResult data; // Added in v2.4.0
 }
 ```
 
@@ -375,42 +377,42 @@ public class GuardrailResult {
 
 ```java
 public class ComplianceResult {
-    private String riskLevel;             // 风险等级
-    private List<String> categories;      // 风险类别列表
+    private String riskLevel;
+    private List<String> categories;
 }
 
 public class DataResult {
-    private String riskLevel;             // 风险等级
-    private List<String> categories;      // 检测到的敏感数据类型（v2.4.0新增）
+    private String riskLevel;
+    private List<String> categories; // Detected sensitive data types
 }
 ```
 
-### 响应格式
+### Example Response
 
-```java
+```json
 {
   "id": "guardrails-xxx",
   "result": {
     "compliance": {
-      "risk_level": "无风险",           // 无风险/低风险/中风险/高风险
-      "categories": []                  // 合规风险类别
+      "risk_level": "Safe",
+      "categories": []
     },
     "security": {
-      "risk_level": "无风险",           // 无风险/低风险/中风险/高风险
-      "categories": []                  // 安全风险类别
+      "risk_level": "Safe",
+      "categories": []
     },
     "data": {
-      "risk_level": "无风险",           // 无风险/低风险/中风险/高风险（v2.4.0新增）
-      "categories": []                  // 检测到的敏感数据类型（v2.4.0新增）
+      "risk_level": "Safe",
+      "categories": []
     }
   },
-  "overall_risk_level": "无风险",       // 综合风险等级
-  "suggest_action": "通过",             // 通过/阻断/代答
-  "suggest_answer": null                // 建议回答（数据防泄漏时包含脱敏后内容）
+  "overall_risk_level": "Safe",
+  "suggest_action": "Allow",
+  "suggest_answer": null
 }
 ```
 
-## 异常处理
+## Exception Handling
 
 ```java
 import cn.xiangxinai.exception.*;
@@ -419,62 +421,57 @@ try {
     GuardrailResponse result = client.checkPrompt("test content");
     System.out.println(result);
 } catch (AuthenticationException e) {
-    System.err.println("认证失败，请检查API密钥: " + e.getMessage());
+    System.err.println("Authentication failed — check API key: " + e.getMessage());
 } catch (RateLimitException e) {
-    System.err.println("请求频率过高，请稍后重试: " + e.getMessage());
+    System.err.println("Rate limit exceeded — try again later: " + e.getMessage());
 } catch (ValidationException e) {
-    System.err.println("输入参数无效: " + e.getMessage());
+    System.err.println("Invalid input: " + e.getMessage());
 } catch (NetworkException e) {
-    System.err.println("网络连接错误: " + e.getMessage());
+    System.err.println("Network error: " + e.getMessage());
 } catch (XiangxinAIException e) {
-    System.err.println("API错误: " + e.getMessage());
+    System.err.println("API error: " + e.getMessage());
 }
 ```
 
-### 异常类型
+### Exception Types
 
-- `XiangxinAIException` - 基础异常类
-- `AuthenticationException` - 认证失败
-- `RateLimitException` - 超出速率限制
-- `ValidationException` - 输入验证错误
-- `NetworkException` - 网络连接错误
+* `XiangxinAIException` – Base exception
+* `AuthenticationException` – Authentication failed
+* `RateLimitException` – Rate limit exceeded
+* `ValidationException` – Invalid input parameters
+* `NetworkException` – Network errors
 
-## 使用场景
+## Use Cases
 
-### 1. 内容审核
+### 1. Content Moderation
 
 ```java
-// 用户生成内容检测
-String userContent = "用户发布的内容...";
+String userContent = "User-generated content...";
 GuardrailResponse result = client.checkPrompt(userContent);
 
 if (!result.isSafe()) {
-    // 内容不安全，执行相应处理
-    System.out.println("内容包含风险: " + result.getAllCategories());
+    System.out.println("Unsafe content: " + result.getAllCategories());
 }
 ```
 
-### 2. 对话系统防护
+### 2. Chatbot Protection
 
 ```java
-// AI对话系统中的安全检测
 List<Message> conversation = Arrays.asList(
-    new Message("user", "用户问题"),
-    new Message("assistant", "准备发送给用户的回答")
+    new Message("user", "User question"),
+    new Message("assistant", "Assistant response")
 );
 
 GuardrailResponse result = client.checkConversation(conversation);
 
-if ("代答".equals(result.getSuggestAction()) && result.getSuggestAnswer() != null) {
-    // 使用安全的代答内容
+if ("Substitute".equals(result.getSuggestAction()) && result.getSuggestAnswer() != null) {
     return result.getSuggestAnswer();
 } else if (result.isBlocked()) {
-    // 阻断不安全的对话
-    return "抱歉，我无法回答这个问题";
+    return "Sorry, I can’t answer that.";
 }
 ```
 
-### 3. 批量内容检测
+### 3. Batch Content Checking
 
 ```java
 import java.util.concurrent.CompletableFuture;
@@ -507,7 +504,7 @@ public class BatchContentChecker {
 }
 ```
 
-### 4. Spring Boot 集成
+### 4. Spring Boot Integration
 
 ```java
 @Configuration
@@ -536,39 +533,33 @@ public class ContentModerationService {
             GuardrailResponse response = xiangxinAIClient.checkPrompt(content);
             return response.isSafe();
         } catch (Exception e) {
-            // 记录日志并返回保守的结果
-            log.error("内容检测失败", e);
+            log.error("Content check failed", e);
             return false;
         }
     }
 }
 ```
 
-## 最佳实践
+## Best Practices
 
-1. **使用对话上下文检测**: 推荐使用 `checkConversation` 而不是 `checkPrompt`，因为上下文感知能提供更准确的检测结果。
+1. **Use Contextual Detection**: Prefer `checkConversation` over `checkPrompt` for more accurate results.
+2. **Resource Management**: Always close clients using try-with-resources or manually.
+3. **Exception Handling**: Implement robust retry and fallback logic.
+4. **Connection Reuse**: Reuse the same `XiangxinAIClient` instance for better performance.
+5. **Tuning**: Adjust timeout and retry parameters as needed.
+6. **Logging**: Log all detection results for auditing and improvement.
 
-2. **资源管理**: 使用 try-with-resources 或手动调用 `close()` 方法释放资源。
+## Thread Safety
 
-3. **异常处理**: 实现适当的异常处理和重试机制。
+`XiangxinAIClient` is thread-safe and can be shared across threads.
 
-4. **连接复用**: 在应用中复用同一个 `XiangxinAIClient` 实例，避免频繁创建。
-
-5. **配置调优**: 根据实际需要调整超时时间和重试次数。
-
-6. **日志记录**: 记录检测结果用于分析和优化。
-
-## 线程安全
-
-`XiangxinAIClient` 是线程安全的，可以在多线程环境中共享使用。
-
-## 许可证
+## License
 
 Apache 2.0
 
-## 技术支持
+## Support
 
-- 官网: https://xiangxinai.cn
-- 文档: https://docs.xiangxinai.cn
-- 问题反馈: https://github.com/xiangxinai/xiangxin-guardrails/issues
-- 邮箱: wanglei@xiangxinai.cn
+* Website: [https://xiangxinai.cn](https://xiangxinai.cn)
+* Docs: [https://docs.xiangxinai.cn](https://docs.xiangxinai.cn)
+* Issues: [https://github.com/xiangxinai/xiangxin-guardrails/issues](https://github.com/xiangxinai/xiangxin-guardrails/issues)
+* Email: [wanglei@xiangxinai.cn](mailto:wanglei@xiangxinai.cn)

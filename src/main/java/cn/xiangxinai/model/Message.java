@@ -3,7 +3,7 @@ package cn.xiangxinai.model;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
- * 消息模型
+ * Message model
  */
 public class Message {
 
@@ -11,7 +11,7 @@ public class Message {
     private String role;
 
     @JsonProperty("content")
-    private Object content;  // 可以是String或List<Object>（多模态）
+    private Object content;  // Can be String or List<Object> (multimodal)
 
     public Message() {
     }

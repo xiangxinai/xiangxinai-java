@@ -1,10 +1,12 @@
 package cn.xiangxinai.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
- * 护栏检测结果
+ * Guardrail result
  */
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class GuardrailResult {
 
     @JsonProperty("compliance")

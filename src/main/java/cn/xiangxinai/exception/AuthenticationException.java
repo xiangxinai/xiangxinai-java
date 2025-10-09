@@ -1,7 +1,7 @@
 package cn.xiangxinai.exception;
 
 /**
- * 认证错误
+ * Authentication error
  */
 public class AuthenticationException extends XiangxinAIException {
     

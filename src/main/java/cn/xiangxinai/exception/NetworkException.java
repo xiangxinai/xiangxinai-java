@@ -1,7 +1,7 @@
 package cn.xiangxinai.exception;
 
 /**
- * 网络错误
+ * Network exception
  */
 public class NetworkException extends XiangxinAIException {
     

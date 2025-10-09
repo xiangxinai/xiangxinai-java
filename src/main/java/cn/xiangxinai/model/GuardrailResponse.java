@@ -7,7 +7,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * 护栏API响应模型
+ * Guardrail response model
  */
 public class GuardrailResponse {
     
@@ -79,28 +79,28 @@ public class GuardrailResponse {
     }
     
     /**
-     * 判断内容是否安全
+     * Check if the content is safe
      */
     public boolean isSafe() {
-        return "通过".equals(suggestAction);
+        return "pass".equals(suggestAction);
     }
     
     /**
-     * 判断内容是否被阻断
+     * Check if the content is blocked
      */
     public boolean isBlocked() {
-        return "阻断".equals(suggestAction);
+        return "reject".equals(suggestAction);
     }
     
     /**
-     * 判断是否有代答
+     * Check if there is a substitute
      */
     public boolean hasSubstitute() {
-        return "代答".equals(suggestAction) || "阻断".equals(suggestAction);
+        return "replace".equals(suggestAction) || "reject".equals(suggestAction);
     }
     
     /**
-     * 获取所有风险类别
+     * Get all risk categories
      */
     public List<String> getAllCategories() {
         Set<String> categorySet = new HashSet<>();
@@ -111,6 +111,9 @@ public class GuardrailResponse {
             }
             if (result.getSecurity() != null && result.getSecurity().getCategories() != null) {
                 categorySet.addAll(result.getSecurity().getCategories());
+            }
+            if (result.getData() != null && result.getData().getCategories() != null) {
+                categorySet.addAll(result.getData().getCategories());
             }
         }
         

@@ -19,29 +19,29 @@ import java.util.concurrent.TimeUnit;
 import java.util.Base64;
 
 /**
- * 象信AI安全护栏客户端 - 基于LLM的上下文感知AI安全护栏
+ * XiangxinAI Guardrails client - Context-aware AI security guardrails based on LLM
  * 
- * <p>这个客户端提供了与象信AI安全护栏API交互的简单接口。
- * 护栏采用上下文感知技术，能够理解对话上下文进行安全检测。
+ * <p>This client provides a simple interface for interacting with the XiangxinAI Guardrails API.
+ * Guardrails uses context-aware technology to understand the conversation context for security detection.
  * 
- * <p>示例用法:
+ * <p>Example usage:
  * <pre>{@code
  * XiangxinAIClient client = new XiangxinAIClient("your-api-key");
  * 
- * // 检测用户输入
- * GuardrailResponse result = client.checkPrompt("用户问题");
+ * // Check prompt
+ * GuardrailResponse result = client.checkPrompt("User question");
  *
- * // 检测输出内容（基于上下文）
- * GuardrailResponse result = client.checkResponseCtx("用户问题", "助手回答");
+ * // Check response context
+ * GuardrailResponse result = client.checkResponseCtx("User question", "Assistant answer");
  *
- * // 检测对话上下文
+ * // Check conversation context
  * List<Message> messages = Arrays.asList(
- *     new Message("user", "问题"),
- *     new Message("assistant", "回答")
+ *     new Message("user", "Question"),
+ *     new Message("assistant", "Answer")
  * );
  * GuardrailResponse result = client.checkConversation(messages);
- * System.out.println(result.getOverallRiskLevel()); // "高风险/中风险/低风险/无风险"
- * System.out.println(result.getSuggestAction()); // "通过/阻断/代答"
+ * System.out.println(result.getOverallRiskLevel()); // "high_risk/medium_risk/low_risk/no_risk"
+ * System.out.println(result.getSuggestAction()); // "pass/reject/replace"
  * }</pre>
  */
 public class XiangxinAIClient implements AutoCloseable {
@@ -50,7 +50,7 @@ public class XiangxinAIClient implements AutoCloseable {
     private static final String DEFAULT_MODEL = "Xiangxin-Guardrails-Text";
     private static final int DEFAULT_TIMEOUT = 30;
     private static final int DEFAULT_MAX_RETRIES = 3;
-    private static final String USER_AGENT = "xiangxinai-java/2.4.0";
+    private static final String USER_AGENT = "xiangxinai-java/2.6.0";
     
     private final OkHttpClient httpClient;
     private final ObjectMapper objectMapper;
@@ -58,21 +58,21 @@ public class XiangxinAIClient implements AutoCloseable {
     private final int maxRetries;
     
     /**
-     * 构造函数，使用默认配置
+     * Constructor, using default configuration
      * 
-     * @param apiKey API密钥
+     * @param apiKey API key
      */
     public XiangxinAIClient(String apiKey) {
         this(apiKey, DEFAULT_BASE_URL, DEFAULT_TIMEOUT, DEFAULT_MAX_RETRIES);
     }
     
     /**
-     * 构造函数，自定义配置
+     * Constructor, custom configuration
      * 
-     * @param apiKey API密钥
-     * @param baseUrl API基础URL
-     * @param timeoutSeconds 请求超时时间（秒）
-     * @param maxRetries 最大重试次数
+     * @param apiKey API key
+     * @param baseUrl API base URL
+     * @param timeoutSeconds Request timeout time (seconds)
+     * @param maxRetries Maximum retry times
      */
     public XiangxinAIClient(String apiKey, String baseUrl, int timeoutSeconds, int maxRetries) {
         if (apiKey == null || apiKey.trim().isEmpty()) {
@@ -100,166 +100,246 @@ public class XiangxinAIClient implements AutoCloseable {
     }
     
     /**
-     * 创建无风险的默认响应
+     * Create a default safe response
      */
     private GuardrailResponse createSafeResponse() {
         return new GuardrailResponse(
                 "guardrails-safe-default",
                 new GuardrailResult(
-                        new ComplianceResult("无风险", new ArrayList<>()),
-                        new SecurityResult("无风险", new ArrayList<>())
+                        new ComplianceResult("no_risk", new ArrayList<>()),
+                        new SecurityResult("no_risk", new ArrayList<>())
                 ),
-                "无风险",
-                "通过",
+                "no_risk",
+                "pass",
                 null
         );
     }
     
     /**
-     * 检测用户输入的安全性
+     * Check prompt security, context-aware detection
      *
-     * @param content 要检测的用户输入内容
-     * @return 检测结果
-     * @throws ValidationException 输入参数无效
-     * @throws AuthenticationException 认证失败
-     * @throws RateLimitException 超出速率限制
-     * @throws XiangxinAIException 其他API错误
+     * @param content User input content to be checked
+     * @return Check result
+     * @throws ValidationException Invalid input parameters
+     * @throws AuthenticationException Authentication failed
+     * @throws RateLimitException Exceeded rate limit
+     * @throws XiangxinAIException Other API errors
      *
-     * <p>返回结果格式:
+     * <p>Return result format:
      * <pre>{@code
      * {
      *   "id": "guardrails-xxx",
      *   "result": {
      *     "compliance": {
-     *       "risk_level": "高风险/中风险/低风险/无风险",
-     *       "categories": ["暴力犯罪", "敏感政治话题"]
+     *       "risk_level": "high_risk/medium_risk/low_risk/no_risk",
+     *       "categories": ["violent crime", "sensitive political topics"]
      *     },
      *     "security": {
-     *       "risk_level": "高风险/中风险/低风险/无风险",
-     *       "categories": ["提示词攻击"]
+     *       "risk_level": "high_risk/medium_risk/low_risk/no_risk",
+     *       "categories": ["prompt attack"]
      *     }
      *   },
-     *   "overall_risk_level": "高风险/中风险/低风险/无风险",
-     *   "suggest_action": "通过/阻断/代答",
-     *   "suggest_answer": "建议回答内容"
+     *   "overall_risk_level": "high_risk/medium_risk/low_risk/no_risk",
+     *   "suggest_action": "pass/reject/replace",
+     *   "suggest_answer": "Suggested answer content"
      * }
      * }</pre>
      *
-     * <p>示例:
+     * <p>Example:
      * <pre>{@code
-     * GuardrailResponse result = client.checkPrompt("我想学习编程");
-     * System.out.println(result.getOverallRiskLevel()); // "无风险"
-     * System.out.println(result.getSuggestAction()); // "通过"
-     * System.out.println(result.getResult().getCompliance().getRiskLevel()); // "无风险"
+     * GuardrailResponse result = client.checkPrompt("I want to learn programming");
+     * System.out.println(result.getOverallRiskLevel()); // "no_risk"
+     * System.out.println(result.getSuggestAction()); // "pass"
+     * System.out.println(result.getResult().getCompliance().getRiskLevel()); // "no_risk"
      * }</pre>
      */
     public GuardrailResponse checkPrompt(String content) {
-        // 如果content是空字符串，直接返回无风险
+        return checkPrompt(content, null);
+    }
+
+    /**
+     * Check prompt security, context-aware detection
+     *
+     * @param content User input content to be checked
+     * @param userId Optional, user ID of the tenant AI application, for user-level risk control and audit tracking
+     * @return Check result
+     * @throws ValidationException Invalid input parameters
+     * @throws AuthenticationException Authentication failed
+     * @throws RateLimitException Exceeded rate limit
+     * @throws XiangxinAIException Other API errors
+     *
+     * <p>Example:
+     * <pre>{@code
+     * // Don't pass user ID
+     * GuardrailResponse result = client.checkPrompt("I want to learn programming");
+     *
+     * // Pass user ID for tracking
+     * GuardrailResponse result = client.checkPrompt("I want to learn programming", "user-123");
+     * }</pre>
+     */
+    public GuardrailResponse checkPrompt(String content, String userId) {
+        // If content is an empty string, return no risk
         if (content == null || content.trim().isEmpty()) {
             return createSafeResponse();
         }
 
         Map<String, String> requestData = new java.util.HashMap<>();
         requestData.put("input", content.trim());
+        if (userId != null && !userId.trim().isEmpty()) {
+            requestData.put("xxai_app_user_id", userId.trim());
+        }
 
         return makeRequest("POST", "/guardrails/input", requestData, GuardrailResponse.class);
     }
     
     /**
-     * 检测对话上下文的安全性 - 上下文感知检测
-     * 
-     * <p>这是护栏的核心功能，能够理解完整的对话上下文进行安全检测。
-     * 不是分别检测每条消息，而是分析整个对话的安全性。
-     * 
-     * @param messages 对话消息列表，包含用户和助手的完整对话
-     * @return 基于对话上下文的检测结果，格式与checkPrompt相同
-     * 
-     * <p>示例:
+     * Check conversation context security, context-aware detection
+     *
+     * <p>This is the core function of the guardrails, which can understand the complete conversation context for security detection.
+     * Instead of detecting each message separately, it analyzes the overall safety of the conversation.
+     *
+     * @param messages Conversation message list, containing the complete conversation of user and assistant,
+     * @return Check result, format is the same as checkPrompt
+     *
+     * <p>Example:
      * <pre>{@code
-     * // 检测用户问题和助手回答的对话安全性
+     * // Check the security of the conversation between user and assistant
      * List<Message> messages = Arrays.asList(
-     *     new Message("user", "用户问题"),
-     *     new Message("assistant", "助手回答")
+     *     new Message("user", "User question"),
+     *     new Message("assistant", "Assistant answer")
      * );
      * GuardrailResponse result = client.checkConversation(messages);
-     * System.out.println(result.getOverallRiskLevel()); // "无风险"
-     * System.out.println(result.getSuggestAction()); // 基于对话上下文的建议
+     * System.out.println(result.getOverallRiskLevel()); // "no_risk"
+     * System.out.println(result.getSuggestAction()); // Suggestion based on conversation context
      * }</pre>
      */
     public GuardrailResponse checkConversation(List<Message> messages) {
-        return checkConversation(messages, DEFAULT_MODEL);
+        return checkConversation(messages, DEFAULT_MODEL, null);
     }
-    
+
     /**
-     * 检测对话上下文的安全性
-     * 
-     * @param messages 对话消息列表
-     * @param model 使用的模型名称
-     * @return 检测结果
+     * Check conversation context security, context-aware detection
+     *
+     * @param messages Conversation message list
+     * @param model Used model name
+     * @return Check result
      */
     public GuardrailResponse checkConversation(List<Message> messages, String model) {
+        return checkConversation(messages, model, null);
+    }
+
+    /**
+     * Check conversation context security, context-aware detection
+     *
+     * @param messages Conversation message list
+     * @param model Used model name
+     * @param userId Optional, user ID of the tenant AI application, for user-level risk control and audit tracking
+     * @return Check result
+     *
+     * <p>Example:
+     * <pre>{@code
+     * List<Message> messages = Arrays.asList(
+     *     new Message("user", "User question"),
+     *     new Message("assistant", "Assistant answer")
+     * );
+     * // Pass user ID for tracking
+     * GuardrailResponse result = client.checkConversation(messages, "Xiangxin-Guardrails-Text", "user-123");
+     * }</pre>
+     */
+    public GuardrailResponse checkConversation(List<Message> messages, String model, String userId) {
         if (messages == null || messages.isEmpty()) {
             throw new ValidationException("Messages cannot be empty");
         }
-        
-        // 验证消息格式
+
+        // Validate message format
         List<Message> validatedMessages = new ArrayList<>();
-        boolean allEmpty = true; // 标记是否所有content都为空
-        
+        boolean allEmpty = true; // Mark whether all content are empty
+
         for (Message msg : messages) {
             if (msg == null) {
                 throw new ValidationException("Message cannot be null");
             }
-            
+
             Object content = msg.getContent();
-            // 检查是否有非空content
+            // Check if there is non-empty content
             if (content != null && (!(content instanceof String) || !((String) content).trim().isEmpty())) {
                 allEmpty = false;
-                // 只添加非空消息到validatedMessages
+                // Only add non-empty messages to validatedMessages
                 validatedMessages.add(msg);
             }
         }
-        
-        // 如果所有messages的content都是空的，直接返回无风险
+
+        // If all messages' content are empty, return no risk
         if (allEmpty) {
             return createSafeResponse();
         }
-        
-        // 确保至少有一条消息
+
+        // Ensure at least one message
         if (validatedMessages.isEmpty()) {
             return createSafeResponse();
         }
-        
+
         GuardrailRequest request = new GuardrailRequest(model, validatedMessages);
+
+        // Add user ID
+        if (userId != null && !userId.trim().isEmpty()) {
+            if (request.getExtraBody() == null) {
+                request.setExtraBody(new HashMap<>());
+            }
+            request.getExtraBody().put("xxai_app_user_id", userId.trim());
+        }
+
         return makeRequest("POST", "/guardrails", request, GuardrailResponse.class);
     }
 
     /**
-     * 检测用户输入和模型输出的安全性 - 上下文感知检测
+     * Check the security of user input and model output, context-aware detection
      *
-     * <p>这是护栏的核心功能，能够理解用户输入和模型输出的上下文进行安全检测。
-     * 护栏会基于用户问题的上下文来检测模型输出是否安全合规。
+     * <p>This is the core function of the guardrails, which can understand the context of user input and model output for security detection.
+     * The guardrails will detect whether the model output is safe and compliant based on the context of the user question.
      *
-     * @param prompt 用户输入的文本内容，用于让护栏理解上下文语意
-     * @param response 模型输出的文本内容，实际检测对象
-     * @return 基于上下文的检测结果，格式与checkPrompt相同
-     * @throws ValidationException 输入参数无效
-     * @throws AuthenticationException 认证失败
-     * @throws RateLimitException 超出速率限制
-     * @throws XiangxinAIException 其他API错误
+     * @param prompt User input text content, used to help the guardrails understand the context semantics
+     * @param response Model output text content, actual detection object
+     * @return Check result, format is the same as checkPrompt
+     * @throws ValidationException Invalid input parameters
+     * @throws AuthenticationException Authentication failed
+     * @throws RateLimitException Exceeded rate limit
+     * @throws XiangxinAIException Other API errors
      *
-     * <p>示例:
+     * <p>Example:
      * <pre>{@code
      * GuardrailResponse result = client.checkResponseCtx(
-     *     "教我做饭",
-     *     "我可以教你做一些简单的家常菜"
+     *     "I want to learn programming",
+     *     "I can teach you how to make simple home-cooked meals"
      * );
-     * System.out.println(result.getOverallRiskLevel()); // "无风险"
-     * System.out.println(result.getSuggestAction()); // "通过"
+     * System.out.println(result.getOverallRiskLevel()); // "no_risk"
+     * System.out.println(result.getSuggestAction()); // "pass"
      * }</pre>
      */
     public GuardrailResponse checkResponseCtx(String prompt, String response) {
-        // 如果prompt或response是空字符串，直接返回无风险
+        return checkResponseCtx(prompt, response, null);
+    }
+
+    /**
+     * Check the security of user input and model output, context-aware detection
+     *
+     * @param prompt User input text content, used to help the guardrails understand the context semantics
+     * @param response Model output text content, actual detection object
+     * @param userId Optional, user ID of the tenant AI application, for user-level risk control and audit tracking
+     * @return Check result, format is the same as checkPrompt
+     *
+     * <p>Example:
+     * <pre>{@code
+     * // Pass user ID for tracking
+     * GuardrailResponse result = client.checkResponseCtx(
+     *     "I want to learn programming",
+     *     "I can teach you how to make simple home-cooked meals",
+     *     "user-123"
+     * );
+     * }</pre>
+     */
+    public GuardrailResponse checkResponseCtx(String prompt, String response, String userId) {
+        // If prompt or response is an empty string, return no risk
         if ((prompt == null || prompt.trim().isEmpty()) && (response == null || response.trim().isEmpty())) {
             return createSafeResponse();
         }
@@ -267,27 +347,30 @@ public class XiangxinAIClient implements AutoCloseable {
         Map<String, String> requestData = new java.util.HashMap<>();
         requestData.put("input", prompt != null ? prompt.trim() : "");
         requestData.put("output", response != null ? response.trim() : "");
+        if (userId != null && !userId.trim().isEmpty()) {
+            requestData.put("xxai_app_user_id", userId.trim());
+        }
 
         return makeRequest("POST", "/guardrails/output", requestData, GuardrailResponse.class);
     }
 
     /**
-     * 将图片编码为base64格式
+     * Encode image to base64 format
      *
-     * @param imagePath 图片的本地路径或HTTP(S)链接
-     * @return base64编码的图片内容
-     * @throws IOException 读取图片失败
+     * @param imagePath Image local path or HTTP(S) link
+     * @return base64 encoded image content
+     * @throws IOException Failed to read image
      */
     private String encodeBase64FromPath(String imagePath) throws IOException {
         byte[] imageData;
 
         if (imagePath.startsWith("http://") || imagePath.startsWith("https://")) {
-            // 从URL获取图片
+            // Get image from URL
             try (InputStream is = new URL(imagePath).openStream()) {
                 imageData = is.readAllBytes();
             }
         } else {
-            // 从本地文件读取
+            // Read image from local file
             imageData = Files.readAllBytes(Paths.get(imagePath));
         }
 
@@ -295,43 +378,67 @@ public class XiangxinAIClient implements AutoCloseable {
     }
 
     /**
-     * 检测文本提示词和图片的安全性 - 多模态检测
+     * Check the security of text prompt and image, multimodal detection
      *
-     * <p>结合文本语义和图片内容进行安全检测。
+     * <p>Combine text semantics and image content for security detection.
      *
-     * @param prompt 文本提示词（可以为空）
-     * @param image 图片文件的本地路径或HTTP(S)链接（不能为空）
-     * @return 检测结果
-     * @throws ValidationException 输入参数无效
-     * @throws XiangxinAIException 其他API错误
+     * @param prompt Text prompt (can be empty)
+     * @param image Image local path or HTTP(S) link (cannot be empty)
+     * @return Check result
+     * @throws ValidationException Invalid input parameters
+     * @throws XiangxinAIException Other API errors
      *
-     * <p>示例:
+     * <p>Example:
      * <pre>{@code
-     * // 检测本地图片
-     * GuardrailResponse result = client.checkPromptImage("这个图片安全吗？", "/path/to/image.jpg");
-     * // 检测网络图片
+     * // Check local image
+     * GuardrailResponse result = client.checkPromptImage("Is this image safe?", "/path/to/image.jpg");
+     * // Check network image
      * GuardrailResponse result = client.checkPromptImage("", "https://example.com/image.jpg");
      * System.out.println(result.getOverallRiskLevel());
      * }</pre>
      */
     public GuardrailResponse checkPromptImage(String prompt, String image) {
-        return checkPromptImage(prompt, image, "Xiangxin-Guardrails-VL");
+        return checkPromptImage(prompt, image, "Xiangxin-Guardrails-VL", null);
     }
 
     /**
-     * 检测文本提示词和图片的安全性，指定模型
+     * Check the security of text prompt and image, specify model
      *
-     * @param prompt 文本提示词（可以为空）
-     * @param image 图片文件的本地路径或HTTP(S)链接（不能为空）
-     * @param model 使用的模型名称
-     * @return 检测结果
+     * @param prompt Text prompt (can be empty)
+     * @param image Image local path or HTTP(S) link (cannot be empty)
+     * @param model Used model name
+     * @return Check result
      */
     public GuardrailResponse checkPromptImage(String prompt, String image, String model) {
+        return checkPromptImage(prompt, image, model, null);
+    }
+
+    /**
+     * Check the security of text prompt and image, specify model and user ID
+     *
+     * @param prompt Text prompt (can be empty)
+     * @param image Image local path or HTTP(S) link (cannot be empty)
+     * @param model Used model name
+     * @param userId Optional, user ID of the tenant AI application, for user-level risk control and audit tracking
+     * @return Check result
+     *
+     * <p>Example:
+     * <pre>{@code
+     * // Pass user ID for tracking
+     * GuardrailResponse result = client.checkPromptImage(
+     *     "Is this image safe?",
+     *     "/path/to/image.jpg",
+     *     "Xiangxin-Guardrails-VL",
+     *     "user-123"
+     * );
+     * }</pre>
+     */
+    public GuardrailResponse checkPromptImage(String prompt, String image, String model, String userId) {
         if (image == null || image.trim().isEmpty()) {
             throw new ValidationException("Image path cannot be empty");
         }
 
-        // 编码图片
+        // Encode image
         String imageBase64;
         try {
             imageBase64 = encodeBase64FromPath(image);
@@ -341,7 +448,7 @@ public class XiangxinAIClient implements AutoCloseable {
             throw new XiangxinAIException("Failed to encode image: " + e.getMessage(), e);
         }
 
-        // 构建消息内容
+        // Build message content
         List<Object> content = new ArrayList<>();
         if (prompt != null && !prompt.trim().isEmpty()) {
             Map<String, String> textContent = new HashMap<>();
@@ -357,51 +464,85 @@ public class XiangxinAIClient implements AutoCloseable {
         imageContent.put("image_url", imageUrl);
         content.add(imageContent);
 
-        // 创建消息
+        // Create message
         Message message = new Message("user", content);
         List<Message> messages = new ArrayList<>();
         messages.add(message);
 
         GuardrailRequest request = new GuardrailRequest(model, messages);
+
+        // Add user ID
+        if (userId != null && !userId.trim().isEmpty()) {
+            if (request.getExtraBody() == null) {
+                request.setExtraBody(new HashMap<>());
+            }
+            request.getExtraBody().put("xxai_app_user_id", userId.trim());
+        }
+
         return makeRequest("POST", "/guardrails", request, GuardrailResponse.class);
     }
 
     /**
-     * 检测文本提示词和多张图片的安全性 - 多模态检测
+     * Check the security of text prompt and multiple images, multimodal detection
      *
-     * <p>结合文本语义和多张图片内容进行安全检测。
+     * <p>Combine text semantics and multiple image content for security detection.
      *
-     * @param prompt 文本提示词（可以为空）
-     * @param images 图片文件的本地路径或HTTP(S)链接列表（不能为空）
-     * @return 检测结果
-     * @throws ValidationException 输入参数无效
-     * @throws XiangxinAIException 其他API错误
+     * @param prompt Text prompt (can be empty)
+     * @param images Image local path or HTTP(S) link list (cannot be empty)
+     * @return Check result
+     * @throws ValidationException Invalid input parameters
+     * @throws XiangxinAIException Other API errors
      *
-     * <p>示例:
+     * <p>Example:
      * <pre>{@code
      * List<String> images = Arrays.asList("/path/to/image1.jpg", "https://example.com/image2.jpg");
-     * GuardrailResponse result = client.checkPromptImages("这些图片安全吗？", images);
+     * GuardrailResponse result = client.checkPromptImages("Is this image safe?", images);
      * System.out.println(result.getOverallRiskLevel());
      * }</pre>
      */
     public GuardrailResponse checkPromptImages(String prompt, List<String> images) {
-        return checkPromptImages(prompt, images, "Xiangxin-Guardrails-VL");
+        return checkPromptImages(prompt, images, "Xiangxin-Guardrails-VL", null);
     }
 
     /**
-     * 检测文本提示词和多张图片的安全性，指定模型
+     * Check the security of text prompt and multiple images, specify model
      *
-     * @param prompt 文本提示词（可以为空）
-     * @param images 图片文件的本地路径或HTTP(S)链接列表（不能为空）
-     * @param model 使用的模型名称
-     * @return 检测结果
+     * @param prompt Text prompt (can be empty)
+     * @param images Image local path or HTTP(S) link list (cannot be empty)
+     * @param model Used model name
+     * @return Check result
      */
     public GuardrailResponse checkPromptImages(String prompt, List<String> images, String model) {
+        return checkPromptImages(prompt, images, model, null);
+    }
+
+    /**
+     * Check the security of text prompt and multiple images, specify model and user ID
+     *
+     * @param prompt Text prompt (can be empty)
+     * @param images Image local path or HTTP(S) link list (cannot be empty)
+     * @param model Used model name
+     * @param userId Optional, user ID of the tenant AI application, for user-level risk control and audit tracking
+     * @return Check result
+     *
+     * <p>Example:
+     * <pre>{@code
+     * List<String> images = Arrays.asList("/path/to/image1.jpg", "https://example.com/image2.jpg");
+     * // Pass user ID for tracking
+     * GuardrailResponse result = client.checkPromptImages(
+     *     "Is this image safe?",
+     *     images,
+     *     "Xiangxin-Guardrails-VL",
+     *     "user-123"
+     * );
+     * }</pre>
+     */
+    public GuardrailResponse checkPromptImages(String prompt, List<String> images, String model, String userId) {
         if (images == null || images.isEmpty()) {
             throw new ValidationException("Images list cannot be empty");
         }
 
-        // 构建消息内容
+        // Build message content
         List<Object> content = new ArrayList<>();
         if (prompt != null && !prompt.trim().isEmpty()) {
             Map<String, String> textContent = new HashMap<>();
@@ -410,7 +551,7 @@ public class XiangxinAIClient implements AutoCloseable {
             content.add(textContent);
         }
 
-        // 编码所有图片
+        // Encode all images
         for (String imagePath : images) {
             String imageBase64;
             try {
@@ -429,19 +570,28 @@ public class XiangxinAIClient implements AutoCloseable {
             content.add(imageContent);
         }
 
-        // 创建消息
+        // Create message
         Message message = new Message("user", content);
         List<Message> messages = new ArrayList<>();
         messages.add(message);
 
         GuardrailRequest request = new GuardrailRequest(model, messages);
+
+        // Add user ID
+        if (userId != null && !userId.trim().isEmpty()) {
+            if (request.getExtraBody() == null) {
+                request.setExtraBody(new HashMap<>());
+            }
+            request.getExtraBody().put("xxai_app_user_id", userId.trim());
+        }
+
         return makeRequest("POST", "/guardrails", request, GuardrailResponse.class);
     }
 
     /**
-     * 检查API服务健康状态
+     * Check API service health status
      * 
-     * @return 健康状态信息
+     * @return Health status information
      */
     @SuppressWarnings("unchecked")
     public Map<String, Object> healthCheck() {
@@ -449,9 +599,9 @@ public class XiangxinAIClient implements AutoCloseable {
     }
     
     /**
-     * 获取可用模型列表
+     * Get available model list
      * 
-     * @return 模型列表信息
+     * @return Model list information
      */
     @SuppressWarnings("unchecked")
     public Map<String, Object> getModels() {
@@ -459,7 +609,7 @@ public class XiangxinAIClient implements AutoCloseable {
     }
     
     /**
-     * 发送HTTP请求
+     * Send HTTP request
      */
     private <T> T makeRequest(String method, String endpoint, Object requestBody, Class<T> responseType) {
         String url = baseUrl + endpoint;
@@ -494,7 +644,7 @@ public class XiangxinAIClient implements AutoCloseable {
                 }
                 throw new NetworkException("Network error: " + e.getMessage(), e);
             } catch (AuthenticationException | ValidationException | RateLimitException e) {
-                // 这些错误不需要重试
+                // These errors do not need to be retried
                 throw e;
             } catch (Exception e) {
                 if (attempt < maxRetries) {
@@ -514,7 +664,7 @@ public class XiangxinAIClient implements AutoCloseable {
     }
     
     /**
-     * 处理HTTP响应
+     * Handle HTTP response
      */
     private <T> T handleResponse(Response response, Class<T> responseType, int attempt) throws IOException {
         String responseBody = response.body() != null ? response.body().string() : "";
@@ -536,7 +686,7 @@ public class XiangxinAIClient implements AutoCloseable {
                 }
             case 429:
                 if (attempt < maxRetries) {
-                    // 指数退避重试
+                    // Exponential backoff retry
                     int waitTime = (int) Math.pow(2, attempt) * 1000 + 1000;
                     try {
                         Thread.sleep(waitTime);
@@ -552,14 +702,14 @@ public class XiangxinAIClient implements AutoCloseable {
                     JsonNode errorNode = objectMapper.readTree(responseBody);
                     errorMsg = errorNode.has("detail") ? errorNode.get("detail").asText() : responseBody;
                 } catch (Exception ignored) {
-                    // 使用原始响应体
+                    // Use original response body
                 }
                 throw new XiangxinAIException("API request failed with status " + response.code() + ": " + errorMsg);
         }
     }
     
     /**
-     * 关闭HTTP客户端资源
+     * Close HTTP client resources
      */
     @Override
     public void close() {

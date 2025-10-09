@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.ArrayList;
 
 /**
- * 安全检测结果
+ * Security result
  */
 public class SecurityResult {
     

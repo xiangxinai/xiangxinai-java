@@ -13,35 +13,35 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
 /**
- * 象信AI安全护栏异步客户端 - 基于LLM的上下文感知AI安全护栏
+ * XiangxinAI Guardrails asynchronous client - Context-aware AI security guardrails based on LLM
  * 
- * <p>这个异步客户端提供了与象信AI安全护栏API交互的异步接口。
- * 护栏采用上下文感知技术，能够理解对话上下文进行安全检测。
- * 异步接口提供更好的性能和资源利用率。
+ * <p>This asynchronous client provides asynchronous interfaces for interacting with the XiangxinAI Guardrails API.
+ * The guardrails use context-aware technology to understand the conversation context for security detection.
+ * The asynchronous interface provides better performance and resource utilization.
  * 
- * <p>示例用法:
+ * <p>Example usage:
  * <pre>{@code
  * AsyncXiangxinAIClient client = new AsyncXiangxinAIClient("your-api-key");
  * 
- * // 异步检测提示词
- * CompletableFuture<GuardrailResponse> future = client.checkPromptAsync("用户问题");
- * GuardrailResponse result = future.get(); // 阻塞等待结果
+ * // Async check prompt
+ * CompletableFuture<GuardrailResponse> future = client.checkPromptAsync("User question");
+ * GuardrailResponse result = future.get(); // Blocking wait for result
  * 
- * // 或使用回调方式
- * client.checkPromptAsync("用户问题")
+ * // Or use callback
+ * client.checkPromptAsync("User question")
  *     .thenAccept(result -> {
  *         System.out.println(result.getOverallRiskLevel());
  *         System.out.println(result.getSuggestAction());
  *     })
  *     .exceptionally(throwable -> {
- *         System.err.println("检测失败: " + throwable.getMessage());
+ *         System.err.println("Check failed: " + throwable.getMessage());
  *         return null;
  *     });
  * 
- * // 异步检测对话上下文
+ * // Async check conversation context
  * List<Message> messages = Arrays.asList(
- *     new Message("user", "问题"),
- *     new Message("assistant", "回答")
+ *     new Message("user", "Question"),
+ *     new Message("assistant", "Answer")
  * );
  * CompletableFuture<GuardrailResponse> conversationFuture = client.checkConversationAsync(messages);
  * }</pre>
@@ -52,7 +52,7 @@ public class AsyncXiangxinAIClient implements AutoCloseable {
     private static final String DEFAULT_MODEL = "Xiangxin-Guardrails-Text";
     private static final int DEFAULT_TIMEOUT = 30;
     private static final int DEFAULT_MAX_RETRIES = 3;
-    private static final String USER_AGENT = "xiangxinai-java-async/2.4.0";
+    private static final String USER_AGENT = "xiangxinai-java-async/2.6.0";
     
     private final OkHttpClient httpClient;
     private final ObjectMapper objectMapper;
@@ -60,21 +60,21 @@ public class AsyncXiangxinAIClient implements AutoCloseable {
     private final int maxRetries;
     
     /**
-     * 构造函数，使用默认配置
+     * Constructor, using default configuration
      * 
-     * @param apiKey API密钥
+     * @param apiKey API key
      */
     public AsyncXiangxinAIClient(String apiKey) {
         this(apiKey, DEFAULT_BASE_URL, DEFAULT_TIMEOUT, DEFAULT_MAX_RETRIES);
     }
     
     /**
-     * 构造函数，自定义配置
+     * Constructor, custom configuration
      * 
-     * @param apiKey API密钥
-     * @param baseUrl API基础URL
-     * @param timeoutSeconds 请求超时时间（秒）
-     * @param maxRetries 最大重试次数
+     * @param apiKey API key
+     * @param baseUrl API base URL
+     * @param timeoutSeconds Request timeout time (seconds)
+     * @param maxRetries Maximum retry times
      */
     public AsyncXiangxinAIClient(String apiKey, String baseUrl, int timeoutSeconds, int maxRetries) {
         if (apiKey == null || apiKey.trim().isEmpty()) {
@@ -102,36 +102,36 @@ public class AsyncXiangxinAIClient implements AutoCloseable {
     }
     
     /**
-     * 创建无风险的默认响应
+     * Create a default safe response
      */
     private GuardrailResponse createSafeResponse() {
         return new GuardrailResponse(
                 "guardrails-safe-default",
                 new GuardrailResult(
-                        new ComplianceResult("无风险", new ArrayList<>()),
-                        new SecurityResult("无风险", new ArrayList<>())
+                        new ComplianceResult("no_risk", new ArrayList<>()),
+                        new SecurityResult("no_risk", new ArrayList<>())
                 ),
-                "无风险",
-                "通过",
+                "no_risk",
+                "pass",
                 null
         );
     }
     
     /**
-     * 异步检测提示词的安全性
+     * Async check prompt security, context-aware detection
      * 
-     * @param content 要检测的提示词内容
-     * @return CompletableFuture<GuardrailResponse> 异步检测结果
+     * @param content The prompt content to check
+     * @return CompletableFuture<GuardrailResponse> Async check result
      * 
-     * <p>示例:
+     * <p>Example:
      * <pre>{@code
-     * client.checkPromptAsync("我想学习编程")
+     * client.checkPromptAsync("I want to learn programming")
      *     .thenAccept(result -> {
-     *         System.out.println(result.getOverallRiskLevel()); // "无风险"
-     *         System.out.println(result.getSuggestAction());    // "通过"
+     *         System.out.println(result.getOverallRiskLevel()); // "no_risk"
+     *         System.out.println(result.getSuggestAction());    // "pass"
      *     })
      *     .exceptionally(throwable -> {
-     *         System.err.println("检测失败: " + throwable.getMessage());
+     *         System.err.println("Check failed: " + throwable.getMessage());
      *         return null;
      *     });
      * }</pre>
@@ -141,14 +141,14 @@ public class AsyncXiangxinAIClient implements AutoCloseable {
     }
     
     /**
-     * 异步检测提示词的安全性，指定模型
+     * Async check prompt security, specify model
      * 
-     * @param content 要检测的提示词内容
-     * @param model 使用的模型名称
-     * @return CompletableFuture<GuardrailResponse> 异步检测结果
+     * @param content The prompt content to check
+     * @param model The model name to use
+     * @return CompletableFuture<GuardrailResponse> Async check result
      */
     public CompletableFuture<GuardrailResponse> checkPromptAsync(String content, String model) {
-        // 如果content是空字符串，直接返回无风险
+        // If content is an empty string, return no risk
         if (content == null || content.trim().isEmpty()) {
             return CompletableFuture.completedFuture(createSafeResponse());
         }
@@ -161,27 +161,30 @@ public class AsyncXiangxinAIClient implements AutoCloseable {
     }
     
     /**
-     * 异步检测对话上下文的安全性 - 上下文感知检测
+     * Async check conversation context security - context-aware detection
      * 
-     * <p>这是护栏的核心功能，能够理解完整的对话上下文进行安全检测。
-     * 不是分别检测每条消息，而是分析整个对话的安全性。
+     * <p>This is the core function of the guardrails, which can understand the complete conversation context for security detection.
+     * Instead of detecting each message separately, it analyzes the overall safety of the conversation.
      * 
-     * @param messages 对话消息列表，包含用户和助手的完整对话
-     * @return CompletableFuture<GuardrailResponse> 异步检测结果
+     * <p>This is the core function of the guardrails, which can understand the complete conversation context for security detection.
+     * Instead of detecting each message separately, it analyzes the overall safety of the conversation.
      * 
-     * <p>示例:
+     * @param messages The conversation message list, containing the complete conversation of user and assistant
+     * @return CompletableFuture<GuardrailResponse> Async check result
+     * 
+     * <p>Example:
      * <pre>{@code
      * List<Message> messages = Arrays.asList(
-     *     new Message("user", "用户问题"),
-     *     new Message("assistant", "助手回答")
+     *     new Message("user", "User question"),
+     *     new Message("assistant", "Assistant answer")
      * );
      * client.checkConversationAsync(messages)
      *     .thenAccept(result -> {
      *         System.out.println(result.getOverallRiskLevel());
      *         if (result.isSafe()) {
-     *             System.out.println("对话安全");
+     *             System.out.println("Conversation safe");
      *         } else {
-     *             System.out.println("对话存在风险: " + result.getAllCategories());
+     *             System.out.println("Conversation risk: " + result.getAllCategories());
      *         }
      *     });
      * }</pre>
@@ -191,11 +194,11 @@ public class AsyncXiangxinAIClient implements AutoCloseable {
     }
     
     /**
-     * 异步检测对话上下文的安全性，指定模型
+     * Async check conversation context security, specify model
      * 
-     * @param messages 对话消息列表
-     * @param model 使用的模型名称
-     * @return CompletableFuture<GuardrailResponse> 异步检测结果
+     * @param messages The conversation message list, containing the complete conversation of user and assistant
+     * @param model The model name to use
+     * @return CompletableFuture<GuardrailResponse> Async check result
      */
     public CompletableFuture<GuardrailResponse> checkConversationAsync(List<Message> messages, String model) {
         if (messages == null || messages.isEmpty()) {
@@ -205,9 +208,9 @@ public class AsyncXiangxinAIClient implements AutoCloseable {
         }
         
         try {
-            // 验证消息格式
+            // Validate message format
             List<Message> validatedMessages = new ArrayList<>();
-            boolean allEmpty = true; // 标记是否所有content都为空
+            boolean allEmpty = true; // Mark whether all content are empty
             
             for (Message msg : messages) {
                 if (msg == null) {
@@ -217,20 +220,20 @@ public class AsyncXiangxinAIClient implements AutoCloseable {
                 }
                 
                 Object content = msg.getContent();
-                // 检查是否有非空content
+                // Check if there is a non-empty content
                 if (content != null && (!(content instanceof String) || !((String) content).trim().isEmpty())) {
                     allEmpty = false;
-                    // 只添加非空消息到validatedMessages
+                    // Only add non-empty messages to validatedMessages
                     validatedMessages.add(msg);
                 }
             }
             
-            // 如果所有messages的content都是空的，直接返回无风险
+            // If all messages' content are empty, return no risk
             if (allEmpty) {
                 return CompletableFuture.completedFuture(createSafeResponse());
             }
             
-            // 确保至少有一条消息
+            // Ensure at least one message
             if (validatedMessages.isEmpty()) {
                 return CompletableFuture.completedFuture(createSafeResponse());
             }
@@ -246,15 +249,15 @@ public class AsyncXiangxinAIClient implements AutoCloseable {
     }
     
     /**
-     * 异步检查API服务健康状态
+     * Async check API service health status
      * 
-     * @return CompletableFuture<Map<String, Object>> 异步健康状态信息
+     * @return CompletableFuture<Map<String, Object>> Async health status information
      */
     @SuppressWarnings("unchecked")
     public CompletableFuture<Map<String, Object>> healthCheckAsync() {
         return makeRequestAsync("GET", "/guardrails/health", null)
                 .thenApply(response -> {
-                    // 这里需要特殊处理，因为健康检查返回的不是GuardrailResponse
+                    // Here we need special handling, because the health check returns not GuardrailResponse
                     try {
                         String json = objectMapper.writeValueAsString(response);
                         return objectMapper.readValue(json, Map.class);
@@ -265,15 +268,15 @@ public class AsyncXiangxinAIClient implements AutoCloseable {
     }
     
     /**
-     * 异步获取可用模型列表
+     * Async get available model list
      * 
-     * @return CompletableFuture<Map<String, Object>> 异步模型列表信息
+     * @return CompletableFuture<Map<String, Object>> Async model list information
      */
     @SuppressWarnings("unchecked")
     public CompletableFuture<Map<String, Object>> getModelsAsync() {
         return makeRequestAsync("GET", "/guardrails/models", null)
                 .thenApply(response -> {
-                    // 这里需要特殊处理，因为模型列表返回的不是GuardrailResponse
+                    // Here we need special handling, because the model list returns not GuardrailResponse
                     try {
                         String json = objectMapper.writeValueAsString(response);
                         return objectMapper.readValue(json, Map.class);
@@ -284,7 +287,7 @@ public class AsyncXiangxinAIClient implements AutoCloseable {
     }
     
     /**
-     * 发送异步HTTP请求
+     * Send asynchronous HTTP request
      */
     private CompletableFuture<GuardrailResponse> makeRequestAsync(String method, String endpoint, GuardrailRequest requestBody) {
         return makeRequestAsync(method, endpoint, requestBody, 0);
@@ -314,7 +317,7 @@ public class AsyncXiangxinAIClient implements AutoCloseable {
                 @Override
                 public void onFailure(Call call, IOException e) {
                     if (attempt < maxRetries) {
-                        // 重试
+                        // Retry
                         CompletableFuture.delayedExecutor(1, TimeUnit.SECONDS)
                                 .execute(() -> {
                                     makeRequestAsync(method, endpoint, requestBody, attempt + 1)
@@ -349,7 +352,7 @@ public class AsyncXiangxinAIClient implements AutoCloseable {
     }
     
     /**
-     * 处理异步HTTP响应
+     * Handle asynchronous HTTP response
      */
     private void handleAsyncResponse(Response response, String endpoint, CompletableFuture<GuardrailResponse> future,
                                    String method, GuardrailRequest requestBody, int attempt) throws IOException {
@@ -380,7 +383,7 @@ public class AsyncXiangxinAIClient implements AutoCloseable {
                 break;
             case 429:
                 if (attempt < maxRetries) {
-                    // 指数退避重试
+                    // Exponential backoff retry
                     int waitTime = (int) Math.pow(2, attempt) * 1000 + 1000;
                     CompletableFuture.delayedExecutor(waitTime, TimeUnit.MILLISECONDS)
                             .execute(() -> {
@@ -403,11 +406,11 @@ public class AsyncXiangxinAIClient implements AutoCloseable {
                     JsonNode errorNode = objectMapper.readTree(responseBody);
                     errorMsg = errorNode.has("detail") ? errorNode.get("detail").asText() : responseBody;
                 } catch (Exception ignored) {
-                    // 使用原始响应体
+                    // Use original response body
                 }
                 
                 if (attempt < maxRetries) {
-                    // 重试其他错误
+                    // Retry other errors
                     CompletableFuture.delayedExecutor(1, TimeUnit.SECONDS)
                             .execute(() -> {
                                 makeRequestAsync(method, endpoint, requestBody, attempt + 1)
@@ -428,7 +431,7 @@ public class AsyncXiangxinAIClient implements AutoCloseable {
     }
     
     /**
-     * 关闭HTTP客户端资源
+     * Close HTTP client resources
      */
     @Override
     public void close() {
